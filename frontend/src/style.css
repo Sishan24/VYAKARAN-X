@@ -1,0 +1,5 @@
+@tailwind base;@tailwind components;@tailwind utilities;
+:root{font-family:Inter,ui-sans-serif,system-ui;color:#211c35;background:#fbfaff}
+body{margin:0;background:radial-gradient(circle at 15% 0%,#f5dfff 0,transparent 28%),radial-gradient(circle at 90% 12%,#d7f7f2 0,transparent 24%),#fbfaff}
+.glass{background:rgba(255,255,255,.78);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.9);box-shadow:0 18px 60px rgba(63,35,112,.08)}
+.gradient{background:linear-gradient(120deg,#7c3aed,#ec4899 52%,#f59e0b);-webkit-background-clip:text;color:transparent}

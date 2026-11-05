@@ -1,0 +1,1 @@
+export default { content:["./index.html","./src/**/*.{js,jsx}"], theme:{extend:{fontFamily:{display:["Georgia","serif"]},boxShadow:{glow:"0 20px 70px rgba(139,92,246,.18)"}}}, plugins:[] }
