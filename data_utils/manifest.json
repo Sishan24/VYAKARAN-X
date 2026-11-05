@@ -1,0 +1,30 @@
+{
+  "datasets": [
+    {
+      "name": "Sansar Sanskrit Corpus",
+      "role": "monolingual MLM pretraining",
+      "url": "https://huggingface.co/datasets/MuseMesh/sansar-sanskrit-corpus",
+      "license_note": "Only openly redistributable source records are stated to be included; preserve per-record provenance and verify upstream terms."
+    },
+    {
+      "name": "UD Sanskrit Vedic",
+      "role": "token morphology supervision",
+      "url": "https://universaldependencies.org/treebanks/sa_vedic/index.html",
+      "license": "CC BY-SA 4.0",
+      "license_note": "Attribute and share adaptations under compatible terms."
+    },
+    {
+      "name": "Saamayik",
+      "role": "parallel Sanskrit-English future translation extension",
+      "url": "https://huggingface.co/datasets/acomquest/Saamayik",
+      "license": "MIT (as declared by dataset card)",
+      "license_note": "Use train split for training; keep validation/test/test_ood held out."
+    }
+  ],
+  "excluded_by_default": [
+    {
+      "name": "Anamavajra-Labs/sanskrit-corpus",
+      "reason": "Mixed row-level licenses include non-commercial, research-only, ShareAlike and unclear subsets; do not consume wholesale."
+    }
+  ]
+}
