@@ -1,0 +1,11 @@
+torch>=2.3
+numpy>=1.26
+pandas>=2.2
+datasets>=3.0
+huggingface_hub>=0.25
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.8
+scikit-learn>=1.5
+tqdm>=4.66
+pyyaml>=6.0
