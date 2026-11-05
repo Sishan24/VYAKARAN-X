@@ -1,0 +1,6 @@
+vocab_size: 12000
+hidden_size: 256
+num_layers: 4
+num_heads: 4
+max_length: 128
+dropout: 0.1

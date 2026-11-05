@@ -1,0 +1,7 @@
+batch_size: 16
+learning_rate: 0.0003
+weight_decay: 0.01
+mask_probability: 0.15
+epochs: 3
+max_lines: 100000
+seed: 42
