@@ -4,7 +4,7 @@ Cleans and deduplicates monolingual text; organizes Universal Dependencies Vedic
 (train, dev, test) and preserves Saamayik parallel splits.
 """
 from pathlib import Path
-import re, json, unicodedata, random
+import re, json, unicodedata, random, shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
@@ -18,7 +18,6 @@ def clean(s):
     s = " ".join(s.split())
     if len(s) < 3 or not DEV.search(s):
         return None
-    # Discard lines with a very low Devanagari proportion (metadata/foreign noise)
     letters = [c for c in s if c.isalpha()]
     if letters and sum("\u0900" <= c <= "\u097F" for c in letters) / len(letters) < 0.35:
         return None
@@ -44,27 +43,41 @@ def count_conllu_stats(p: Path):
 
 def main():
     print("Preparing VYAKARANA-X datasets...")
-    candidates = []
-    for p in [RAW / "sansar_sample.txt", ROOT / "data/demo/monolingual.txt"]:
-        if p.exists():
-            candidates += p.read_text(encoding="utf-8", errors="ignore").splitlines()
+    train_txt = OUT / "mlm_train.txt"
+    valid_txt = OUT / "mlm_valid.txt"
 
-    seen = set()
-    rows = []
-    for x in candidates:
-        x = clean(x)
-        if x and x not in seen:
-            seen.add(x)
-            rows.append(x)
+    train_count = 0
+    valid_count = 0
 
-    random.Random(42).shuffle(rows)
-    if rows:
-        n = max(1, int(len(rows) * 0.95))
-        train_rows = rows[:n]
-        valid_rows = rows[n:] if len(rows) > n else rows[-1:]
-        (OUT / "mlm_train.txt").write_text("\n".join(train_rows), encoding="utf-8")
-        (OUT / "mlm_valid.txt").write_text("\n".join(valid_rows), encoding="utf-8")
-        print(f"Monolingual: {len(train_rows):,} train / {len(valid_rows):,} val lines")
+    if train_txt.exists() and train_txt.stat().st_size > 1000000:
+        print(f"Using existing prepared mlm_train.txt ({train_txt.stat().st_size:,} bytes)")
+        train_count = sum(1 for line in train_txt.read_text(encoding="utf-8", errors="ignore").splitlines() if line.strip())
+        if valid_txt.exists():
+            valid_count = sum(1 for line in valid_txt.read_text(encoding="utf-8", errors="ignore").splitlines() if line.strip())
+    else:
+        candidates = []
+        for p in [RAW / "sansar_sample.txt", ROOT / "data/demo/monolingual.txt"]:
+            if p.exists():
+                candidates += p.read_text(encoding="utf-8", errors="ignore").splitlines()
+
+        seen = set()
+        rows = []
+        for x in candidates:
+            x = clean(x)
+            if x and x not in seen:
+                seen.add(x)
+                rows.append(x)
+
+        random.Random(42).shuffle(rows)
+        if rows:
+            n = max(1, int(len(rows) * 0.95))
+            train_rows = rows[:n]
+            valid_rows = rows[n:] if len(rows) > n else rows[-1:]
+            train_txt.write_text("\n".join(train_rows), encoding="utf-8")
+            valid_txt.write_text("\n".join(valid_rows), encoding="utf-8")
+            train_count = len(train_rows)
+            valid_count = len(valid_rows)
+            print(f"Monolingual: {train_count:,} train / {valid_count:,} val lines")
 
     # Copy official UD Vedic splits (train, dev, test)
     ud_stats = {}
@@ -72,7 +85,8 @@ def main():
         raw_p = RAW / f"sa_vedic_{split}.conllu"
         out_p = OUT / f"sa_vedic_{split}.conllu"
         if raw_p.exists():
-            out_p.write_bytes(raw_p.read_bytes())
+            if not out_p.exists() or out_p.stat().st_size != raw_p.stat().st_size:
+                shutil.copy2(raw_p, out_p)
             stats = count_conllu_stats(out_p)
             ud_stats[split] = stats
             print(f"UD Vedic {split}: {stats['sentences']:,} sentences, {stats['tokens']:,} tokens -> {out_p.name}")
@@ -81,15 +95,16 @@ def main():
     saamayik_stats = {}
     for p in RAW.glob("saamayik_*.jsonl"):
         out_target = OUT / p.name
-        out_target.write_bytes(p.read_bytes())
+        if not out_target.exists() or out_target.stat().st_size != p.stat().st_size:
+            shutil.copy2(p, out_target)
         count = sum(1 for line in out_target.read_text(encoding="utf-8").splitlines() if line.strip())
         saamayik_stats[p.stem] = count
         print(f"Preserved {p.name} ({count:,} pairs)")
 
     report = {
-        "unique_monolingual_lines": len(rows),
-        "mlm_train_lines": len(rows[:n]) if rows else 0,
-        "mlm_valid_lines": len(rows[n:]) if rows else 0,
+        "unique_monolingual_lines": train_count + valid_count,
+        "mlm_train_lines": train_count,
+        "mlm_valid_lines": valid_count,
         "ud_vedic_splits": ud_stats,
         "saamayik_splits": saamayik_stats,
         "sources": [
