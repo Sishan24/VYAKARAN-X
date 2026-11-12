@@ -1,8 +1,8 @@
 """
 SanskritEncoder: compact Transformer encoder.
-- Weight-tied MLM head
+- Weight-tied MLM head (optional per forward pass)
 - Token-level morphology/POS head
-- Sentence pooling (CLS + mean) for future downstream tasks
+- Sentence pooling (CLS + mean) for downstream tasks
 - Config-driven from configs/model.yaml
 """
 import yaml
@@ -25,8 +25,8 @@ class SanskritEncoder(nn.Module):
                  max_len=None, dropout=None):
         super().__init__()
         cfg     = _load_model_cfg()
-        hidden  = hidden  or cfg.get("hidden_size", 256)
-        layers  = layers  or cfg.get("num_layers",  4)
+        hidden  = hidden  or cfg.get("hidden_size", 128)
+        layers  = layers  or cfg.get("num_layers",  3)
         heads   = heads   or cfg.get("num_heads",   4)
         max_len = max_len or cfg.get("max_length",  128)
         dropout = dropout if dropout is not None else cfg.get("dropout", 0.1)
@@ -62,7 +62,7 @@ class SanskritEncoder(nn.Module):
             nn.Linear(hidden // 2, num_tags),
         )
 
-        # Sentence pooler: CLS + mean-pool → dense
+        # Sentence pooler: CLS + mean-pool -> dense
         self.pooler = nn.Sequential(
             nn.Linear(hidden * 2, hidden),
             nn.Tanh(),
@@ -74,11 +74,11 @@ class SanskritEncoder(nn.Module):
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                nn.init.trunc_normal_(m.weight, std=0.02)
+                nn.init.normal_(m.weight, mean=0.0, std=0.02)
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
             elif isinstance(m, nn.Embedding):
-                nn.init.normal_(m.weight, std=0.02)
+                nn.init.normal_(m.weight, mean=0.0, std=0.02)
                 if m.padding_idx is not None:
                     m.weight.data[m.padding_idx].zero_()
 
@@ -105,22 +105,27 @@ class SanskritEncoder(nn.Module):
         return self.pooler(torch.cat([cls, mean], dim=-1))
 
     # ------------------------------------------------------------------
-    def forward(self, ids, attention_mask=None):
+    def forward(self, ids, attention_mask=None, mlm: bool = True, morph: bool = True, pool: bool = False):
         h, attention_mask = self._encode(ids, attention_mask)
+        out = {"hidden": h}
 
-        # MLM: proj → act → norm → weight-tied linear + bias
-        mlm_h   = self.mlm_norm(self.mlm_act(self.mlm_proj(h)))
-        mlm_log = mlm_h @ self.token.weight.T + self.mlm_bias
+        if mlm:
+            mlm_h = self.mlm_norm(self.mlm_act(self.mlm_proj(h)))
+            out["mlm_logits"] = mlm_h @ self.token.weight.T + self.mlm_bias
+        else:
+            out["mlm_logits"] = None
 
-        morph_log = self.morph(h)
-        sent_vec  = self._pool(h, attention_mask)
+        if morph:
+            out["morph_logits"] = self.morph(h)
+        else:
+            out["morph_logits"] = None
 
-        return {
-            "hidden":       h,
-            "mlm_logits":   mlm_log,
-            "morph_logits": morph_log,
-            "sentence_vec": sent_vec,
-        }
+        if pool:
+            out["sentence_vec"] = self._pool(h, attention_mask)
+        else:
+            out["sentence_vec"] = None
+
+        return out
 
     # ------------------------------------------------------------------
     @property

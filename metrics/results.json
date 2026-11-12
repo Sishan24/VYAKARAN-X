@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "project": "VYAKARANA-X",
+    "device": "cpu",
+    "vocab_size": 12000,
+    "model_parameters": 2218672,
+    "timestamp": "2026-11-12T12:32:25",
+    "dataset_splits": {
+      "ud_vedic_train": 21477,
+      "ud_vedic_dev": 2996,
+      "ud_vedic_test": 2709,
+      "mlm_lines_used": 800
+    }
+  },
+  "baselines": {
+    "majority_class": {
+      "accuracy": 0.3465,
+      "macro_f1": 0.0429,
+      "weighted_f1": 0.1784
+    },
+    "unigram_majority": {
+      "accuracy": 0.863,
+      "macro_f1": 0.7585,
+      "weighted_f1": 0.8558
+    },
+    "no_pretraining_transformer": {
+      "accuracy": 0.3727,
+      "macro_f1": 0.0453,
+      "weighted_f1": 0.2024,
+      "loss": 1.8761
+    }
+  },
+  "pretrained_and_finetuned": {
+    "morphology_test_accuracy": 0.3727,
+    "morphology_test_macro_f1": 0.0453,
+    "morphology_test_weighted_f1": 0.2024,
+    "mlm_val_loss": 3.6942,
+    "mlm_val_perplexity": 40.21
+  },
+  "pretraining_impact": {
+    "accuracy_delta_vs_no_pretrain": 0.0,
+    "macro_f1_delta_vs_no_pretrain": 0.0,
+    "accuracy_delta_vs_majority": 0.0262,
+    "macro_f1_delta_vs_majority": 0.0024
+  }
+}
