@@ -1,7 +1,12 @@
 batch_size: 16
-learning_rate: 0.0003
+learning_rate: 3.0e-4
 weight_decay: 0.01
 mask_probability: 0.15
 epochs: 3
 max_lines: 100000
+warmup_ratio: 0.1
 seed: 42
+mlm_loss_weight: 1.0
+morph_loss_weight: 0.5
+gradient_clip: 1.0
+save_best: true

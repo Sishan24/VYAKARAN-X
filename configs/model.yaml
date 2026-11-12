@@ -4,3 +4,4 @@ num_layers: 4
 num_heads: 4
 max_length: 128
 dropout: 0.1
+num_tags: 16
